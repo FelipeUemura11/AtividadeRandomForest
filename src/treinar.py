@@ -5,7 +5,7 @@ from pickle import dump
 from pathlib import Path
 
 def treinar_modelo(df, coluna_target, nome_modelo):
-    print(f" >> Treinando modelo {nome_modelo} << ")
+    print(f"\n>>> Treinando modelo {nome_modelo} <<< ")
 
     # Remove apenas a coluna de target específica
     X = df.drop(columns=[coluna_target])

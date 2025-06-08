@@ -2,19 +2,19 @@ import pandas as pd
 from ucimlrepo import fetch_ucirepo
 # importacao do dataset
 def import_df():
-    print(" >> Importando dados do UCI << ")
+    print(">> Importando dados do UCI << ")
     df = fetch_ucirepo(id=938)
 
     X = df.data.features
     y = df.data.targets
 
     df = pd.concat([X, y], axis=1)
-    print(" > Dataset importado!! < ")
+    print("> Dataset importado!! < ")
     return df
 
 # preprocessamento dos dados
 def preprocessamento_df(df):
-    print(" >> Processando dados << ")
+    print("\n>> Processando dados << ")
 
     colunas_remover = [ 
         'Segmented_Neutrophils', 'Appendix_Wall_Layers', 'Target_Sign', 'Appendicolith',
@@ -48,5 +48,5 @@ def preprocessamento_df(df):
     for coluna in colunas_numericas:
         df[coluna] = df[coluna].fillna(df[coluna].median())
 
-    print(" > Processamento concluído < ")
+    print("> Processamento concluído < ")
     return df

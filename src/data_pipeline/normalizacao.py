@@ -5,7 +5,7 @@ from pathlib import Path
 
 # normalizacao dos dados
 def normalizacao_df(df):
-    print(" >> Normalizando dados << ")
+    print(">>> Normalizando dados <<< ")
 
     # separacao das colunas de targets
     colunas_targets = ['Diagnosis', 'Severity', 'Management']
@@ -25,11 +25,12 @@ def normalizacao_df(df):
     # concatena features e targets
     df_processado = pd.concat([df_features, df_targets], axis=1)
 
-    # salvar scaler na raiz
-    root = Path(__file__).resolve().parent.parent
-    scaler_path = root / 'models' / 'scaler.pkl'
-    scaler_path.parent.mkdir(parents=True, exist_ok=True)  # Garante que o diretório exista
+    # salvar scaler na raiz do projeto
+    root = Path(__file__).resolve().parent.parent.parent
+    models_dir = root / 'models'
+    models_dir.mkdir(parents=True, exist_ok=True)  # Garante que o diretório exista
+    scaler_path = models_dir / 'scaler.pkl'
     dump(scaler, open(scaler_path, 'wb'))
 
-    print(">> Normalização concluida <<")
+    print(">> Normalizacao concluida <<")
     return df_processado

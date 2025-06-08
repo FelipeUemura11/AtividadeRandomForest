@@ -2,7 +2,7 @@ from imblearn.over_sampling import SMOTE
 import pandas as pd
 
 def balanceamento_df(df, coluna_target):
-    print(" >> Balanceando dados << ")
+    print("\n>> Balanceando dados << ")
 
     # separacao das colunas de targets
     X = df.drop(columns=['Diagnosis', 'Severity', 'Management'])
