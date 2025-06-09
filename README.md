@@ -37,14 +37,6 @@ pip install -r requirements.txt
 ```bash
 python src/main.py
 
-2. **Treinar o Modelo**:
-```bash
-python src/treinar.py
-```
-
-3. **Fazer Inferência**:
-```bash
-python src/inferencia.py
 ```
 ```
 
