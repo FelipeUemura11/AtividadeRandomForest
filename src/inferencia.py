@@ -1,14 +1,23 @@
 import pandas as pd
 import numpy as np
 from pathlib import Path
-from pickle import load
+from joblib import load
 import os
 
-# caminhos
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
-MODELS_DIR = PROJECT_ROOT / "models"
-DATA_DIR = PROJECT_ROOT / "data"
+# Diretórios
+BASE_DIR = Path(__file__).parent.parent
+DATA_DIR = BASE_DIR / "data"
+MODELS_DIR = BASE_DIR / "models"
 CSV_PATH = DATA_DIR / "pacientes_inferidos.csv"
+
+# Carrega o scaler
+try:
+    scaler_path = MODELS_DIR / "scaler.pkl"
+    with open(scaler_path, "rb") as f:
+        scaler = load(f)
+except Exception as e:
+    print(f"ERRO ao carregar o scaler: {str(e)}")
+    scaler = None
 
 # Colunas exatamente como definidas no processamento
 COLUNAS_NUMERICAS = [
@@ -21,9 +30,9 @@ COLUNAS_NUMERICAS = [
 # Colunas que serão perguntadas ao usuário (removendo as colunas de target)
 COLUNAS_CATEGORICAS = [
     'Sex', 'Appendix_on_US', 'Migratory_Pain', 'Lower_Right_Abd_Pain',
-    'Contralateral_Rebound_Tenderness', 'Coughing_Pain', 'Nausea', 'Loss_of_Appetite',
-    'Neutrophilia', 'Ketones_in_Urine', 'RBC_in_Urine', 'WBC_in_Urine',
-    'Dysuria', 'Stool', 'Peritonitis', 'Psoas_Sign',
+    'Contralateral_Rebound_Tenderness', 'Coughing_Pain', 'Nausea',
+    'Loss_of_Appetite', 'Neutrophilia', 'Ketones_in_Urine', 'RBC_in_Urine',
+    'WBC_in_Urine', 'Dysuria', 'Stool', 'Peritonitis', 'Psoas_Sign',
     'Ipsilateral_Rebound_Tenderness', 'US_Performed', 'Free_Fluids'
 ]
 
@@ -32,20 +41,24 @@ COLUNAS_TARGET = ['Diagnosis', 'Severity', 'Management']
 
 # Lista de colunas que o MODELO espera (com one-hot encoding)
 ENCODED_FEATURES_NAMES = [
-    'Age','BMI','Height','Weight','Length_of_Stay','Appendix_Diameter','Body_Temperature','WBC_Count',
-    'Neutrophil_Percentage','RBC_Count','Hemoglobin','RDW','Thrombocyte_Count','CRP','Alvarado_Score',
-    'Paedriatic_Appendicitis_Score','Sex_female','Sex_male','Appendix_on_US_no','Appendix_on_US_yes',
-    'Migratory_Pain_no','Migratory_Pain_yes','Lower_Right_Abd_Pain_no','Lower_Right_Abd_Pain_yes',
-    'Contralateral_Rebound_Tenderness_no','Contralateral_Rebound_Tenderness_yes','Coughing_Pain_no',
-    'Coughing_Pain_yes','Nausea_no','Nausea_yes','Loss_of_Appetite_no','Loss_of_Appetite_yes',
-    'Neutrophilia_no','Neutrophilia_yes','Ketones_in_Urine_+','Ketones_in_Urine_++',
-    'Ketones_in_Urine_+++','Ketones_in_Urine_no','RBC_in_Urine_+','RBC_in_Urine_++',
-    'RBC_in_Urine_+++','RBC_in_Urine_no','WBC_in_Urine_+','WBC_in_Urine_++',
-    'WBC_in_Urine_+++','WBC_in_Urine_no','Dysuria_no','Dysuria_yes','Stool_constipation',
-    'Stool_constipation, diarrhea','Stool_diarrhea','Stool_normal','Peritonitis_generalized',
-    'Peritonitis_local','Peritonitis_no','Psoas_Sign_no','Psoas_Sign_yes',
-    'Ipsilateral_Rebound_Tenderness_no','Ipsilateral_Rebound_Tenderness_yes','US_Performed_no',
-    'US_Performed_yes','Free_Fluids_no','Free_Fluids_yes'
+    'Age', 'BMI', 'Height', 'Weight', 'Length_of_Stay', 'Alvarado_Score',
+    'Paedriatic_Appendicitis_Score', 'Appendix_Diameter', 'Body_Temperature',
+    'WBC_Count', 'Neutrophil_Percentage', 'RBC_Count', 'Hemoglobin', 'RDW',
+    'Thrombocyte_Count', 'CRP', 'Sex_female', 'Sex_male', 'Appendix_on_US_no',
+    'Appendix_on_US_yes', 'Migratory_Pain_no', 'Migratory_Pain_yes',
+    'Lower_Right_Abd_Pain_no', 'Lower_Right_Abd_Pain_yes',
+    'Contralateral_Rebound_Tenderness_no', 'Contralateral_Rebound_Tenderness_yes',
+    'Coughing_Pain_no', 'Coughing_Pain_yes', 'Nausea_no', 'Nausea_yes',
+    'Loss_of_Appetite_no', 'Loss_of_Appetite_yes', 'Neutrophilia_no',
+    'Neutrophilia_yes', 'Ketones_in_Urine_+', 'Ketones_in_Urine_++',
+    'Ketones_in_Urine_+++', 'Ketones_in_Urine_no', 'RBC_in_Urine_+',
+    'RBC_in_Urine_++', 'RBC_in_Urine_+++', 'RBC_in_Urine_no', 'WBC_in_Urine_+',
+    'WBC_in_Urine_++', 'WBC_in_Urine_+++', 'WBC_in_Urine_no', 'Dysuria_no',
+    'Dysuria_yes', 'Stool_constipation', 'Stool_constipation, diarrhea',
+    'Stool_diarrhea', 'Stool_normal', 'Peritonitis_generalized',
+    'Peritonitis_local', 'Peritonitis_no', 'Psoas_Sign_no', 'Psoas_Sign_yes',
+    'Ipsilateral_Rebound_Tenderness_no', 'Ipsilateral_Rebound_Tenderness_yes',
+    'US_Performed_no', 'US_Performed_yes', 'Free_Fluids_no', 'Free_Fluids_yes'
 ]
 
 def verificar_diretorios():
@@ -55,46 +68,21 @@ def verificar_diretorios():
     MODELS_DIR.mkdir(parents=True, exist_ok=True)
     DATA_DIR.mkdir(parents=True, exist_ok=True)
 
-def normalizar_paciente(paciente):
+def normalizar_dados(paciente):
     """
-    Normaliza os dados do paciente usando o modelo de normalização salvo.
+    Normaliza os dados do paciente usando o scaler.
     """
-    verificar_diretorios()
-    
-    try:
-        normalizer_path = MODELS_DIR / "scaler.pkl"
-        if not normalizer_path.exists():
-            print(f"ERRO: Modelo normalizador '{normalizer_path.name}' não encontrado!")
-            print("Execute o treinamento primeiro (opção 1).")
-            return None
-            
-        with open(normalizer_path, "rb") as f:
-            modelo_normalizador = load(f)
-    except Exception as e:
-        print(f"ERRO ao carregar o normalizador: {str(e)}")
+    if scaler is None:
+        print("ERRO: Scaler não foi carregado corretamente!")
         return None
-
-    # Verifica se todas as colunas necessárias estão presentes
-    colunas_faltantes = set(COLUNAS_NUMERICAS) - set(paciente.columns)
-    if colunas_faltantes:
-        print(f"ERRO: Colunas numéricas faltando: {colunas_faltantes}")
-        return None
-
-    # Separa colunas num e cat
-    colunas_numericas_df = paciente[COLUNAS_NUMERICAS].copy()
-    colunas_categoricas = paciente.drop(columns=COLUNAS_NUMERICAS)
-
-    # Normaliza dados num
+        
     try:
-        # Garante que as colunas estejam na ordem correta
-        print("\nOrdem das colunas numéricas:")
-        print(colunas_numericas_df.columns.tolist())
-        
-        # Reordena as colunas para corresponder à ordem do treinamento
-        colunas_numericas_df = colunas_numericas_df[COLUNAS_NUMERICAS]
-        
-        # Aplica a normalização
-        paciente_num_normalizados = modelo_normalizador.transform(colunas_numericas_df)
+        # Separa dados numéricos e categóricos
+        colunas_numericas = paciente[COLUNAS_NUMERICAS]
+        colunas_categoricas = paciente[COLUNAS_CATEGORICAS]
+
+        # Normaliza dados numéricos
+        paciente_num_normalizados = scaler.transform(colunas_numericas)
         paciente_num_normalizados = pd.DataFrame(paciente_num_normalizados, columns=COLUNAS_NUMERICAS)
 
         # Aplica One-Hot Encoding nos dados categóricos
@@ -111,26 +99,24 @@ def normalizar_paciente(paciente):
         
     except Exception as e:
         print(f"ERRO ao normalizar dados numéricos: {str(e)}")
-        print("Verifique se a ordem das colunas está correta.")
         return None
 
-def inferir_target(paciente, target):
+def inferir_target(paciente_normalizado, target):
     """
-    Realiza a inferência para um target específico (Diagnosis, Severity ou Management).
+    Realiza a inferência para um target específico.
     """
-    verificar_diretorios()
-    
-    modelo_path = MODELS_DIR / f"modelo_{target}.pkl"
     try:
-        if not modelo_path.exists():
-            print(f"ERRO: Modelo '{modelo_path.name}' não encontrado!")
-            print("Execute o treinamento primeiro (opção 1).")
-            return None
-            
+        # Carrega o modelo específico para o target
+        modelo_path = MODELS_DIR / f"modelo_{target}.pkl"
         with open(modelo_path, "rb") as f:
-            return load(f).predict_proba(paciente)
+            modelo = load(f)
+
+        # Realiza a predição
+        proba = modelo.predict_proba(paciente_normalizado)
+        return proba
+
     except Exception as e:
-        print(f"ERRO ao carregar o modelo: {str(e)}")
+        print(f"ERRO ao inferir {target}: {str(e)}")
         return None
 
 def salvar_inferencia_csv(dados):
@@ -158,7 +144,7 @@ def inferir_paciente(paciente):
         return
 
     # Normaliza dados do paciente
-    paciente_normalizado = normalizar_paciente(paciente)
+    paciente_normalizado = normalizar_dados(paciente)
     if paciente_normalizado is None:
         return
 
@@ -274,11 +260,18 @@ def obter_input_usuario():
     return pd.DataFrame([dados])
 
 def main():
-    print(" >> Diagnostico de Apendicite Pediatrica <<")
-    
-    # Obtem dados do paciente
+    """
+    Função principal que coordena o fluxo de inferência.
+    """
+    # Verifica diretórios
+    if not verificar_diretorios():
+        return
+
+    # Coleta dados do paciente
     paciente = obter_input_usuario()
-    
+    if paciente is None:
+        return
+
     inferir_paciente(paciente)
 
 if __name__ == "__main__":
