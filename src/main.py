@@ -3,6 +3,7 @@ from data_pipeline.normalizacao import normalizacao_df
 from data_pipeline.balanceamento import balanceamento_df
 from treinar import treinar_modelo
 from pathlib import Path
+from inferencia import obter_input_usuario, inferir_paciente
 
 def criacao_diretorios():
     root = Path(__file__).resolve().parent.parent
@@ -62,7 +63,9 @@ def main():
             if opc == 1:
                 executar_pipeline_de_treinamento()
             elif opc == 2:
-                print("inferir")
+                # Obtém dados do paciente e realiza a inferência
+                paciente = obter_input_usuario()
+                inferir_paciente(paciente)
             elif opc == 0:
                 print("Saindo do programa...")
                 break
